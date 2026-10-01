@@ -1,0 +1,5 @@
+policies:
+  requireCleanWorkingTree: true
+  requireValidationEvidence: true
+  requireHumanApproval: true
+  maxChangedFiles: 50
