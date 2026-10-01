@@ -3,6 +3,7 @@ import { collectGitEvidence } from '../../core/git.js'
 import {
   evaluatePolicy,
   getRecommendation,
+  loadEvidence,
   loadPolicy,
 } from '../../core/policy.js'
 
@@ -29,7 +30,9 @@ export default class PreflightAnalyze extends Command {
 
     const git = await collectGitEvidence(flags.base)
     const policy = await loadPolicy()
-    const risks = evaluatePolicy(policy, git)
+    const evidence = await loadEvidence()
+
+    const risks = evaluatePolicy(policy, git, evidence)
     const recommendation = getRecommendation(risks)
 
     this.log('Agentia Preflight')
@@ -41,6 +44,8 @@ export default class PreflightAnalyze extends Command {
     this.log(`Changed files: ${git.changedFiles.length}`)
     this.log(`Additions: ${git.additions}`)
     this.log(`Deletions: ${git.deletions}`)
+    this.log(`Validation: ${evidence.validation.status}`)
+    this.log(`Approval: ${evidence.approval.status}`)
 
     this.log('\nRisks')
 

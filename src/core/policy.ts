@@ -9,6 +9,18 @@ export interface Policy {
   maxChangedFiles: number
 }
 
+export interface ValidationEvidence {
+  status: 'passed' | 'failed' | 'unknown'
+  checks: Array<{
+    name: string
+    status: 'passed' | 'failed' | 'unknown'
+  }>
+}
+
+export interface ApprovalEvidence {
+  status: 'approved' | 'pending' | 'unknown'
+}
+
 export interface Risk {
   id: string
   severity: 'BLOCK' | 'WARN'
@@ -23,7 +35,9 @@ const defaults: Policy = {
   maxChangedFiles: 50,
 }
 
-export async function loadPolicy(path = '.agentia-preflight.yml'): Promise<Policy> {
+export async function loadPolicy(
+  path = '.agentia-preflight.yml',
+): Promise<Policy> {
   try {
     const content = await readFile(path, 'utf8')
     const config = parse(content) ?? {}
@@ -37,9 +51,45 @@ export async function loadPolicy(path = '.agentia-preflight.yml'): Promise<Polic
   }
 }
 
+export async function loadEvidence(
+  path = '.agentia-preflight-evidence.yml',
+): Promise<{
+  validation: ValidationEvidence
+  approval: ApprovalEvidence
+}> {
+  try {
+    const content = await readFile(path, 'utf8')
+    const config = parse(content) ?? {}
+
+    return {
+      validation: config.validation ?? {
+        status: 'unknown',
+        checks: [],
+      },
+      approval: config.approval ?? {
+        status: 'unknown',
+      },
+    }
+  } catch {
+    return {
+      validation: {
+        status: 'unknown',
+        checks: [],
+      },
+      approval: {
+        status: 'unknown',
+      },
+    }
+  }
+}
+
 export function evaluatePolicy(
   policy: Policy,
   git: GitEvidence,
+  evidence: {
+    validation: ValidationEvidence
+    approval: ApprovalEvidence
+  },
 ): Risk[] {
   const risks: Risk[] = []
 
@@ -62,27 +112,40 @@ export function evaluatePolicy(
   }
 
   if (policy.requireValidationEvidence) {
-    risks.push({
-      id: 'VALIDATION_MISSING',
-      severity: 'BLOCK',
-      title: 'Validation evidence is missing',
-      reason: 'No validation evidence has been provided yet.',
-    })
+    if (evidence.validation.status === 'unknown') {
+      risks.push({
+        id: 'VALIDATION_MISSING',
+        severity: 'BLOCK',
+        title: 'Validation evidence is missing',
+        reason: 'No validation evidence was provided.',
+      })
+    } else if (evidence.validation.status === 'failed') {
+      risks.push({
+        id: 'VALIDATION_FAILED',
+        severity: 'BLOCK',
+        title: 'Validation failed',
+        reason: 'One or more required validation checks failed.',
+      })
+    }
   }
 
   if (policy.requireHumanApproval) {
-    risks.push({
-      id: 'HUMAN_APPROVAL_REQUIRED',
-      severity: 'WARN',
-      title: 'Human approval required',
-      reason: 'The release requires explicit human approval before promotion.',
-    })
+    if (evidence.approval.status !== 'approved') {
+      risks.push({
+        id: 'HUMAN_APPROVAL_REQUIRED',
+        severity: 'WARN',
+        title: 'Human approval required',
+        reason: 'The release still requires explicit human approval.',
+      })
+    }
   }
 
   return risks
 }
 
-export function getRecommendation(risks: Risk[]): 'READY' | 'WARN' | 'BLOCK' {
+export function getRecommendation(
+  risks: Risk[],
+): 'READY' | 'WARN' | 'BLOCK' {
   if (risks.some(risk => risk.severity === 'BLOCK')) {
     return 'BLOCK'
   }

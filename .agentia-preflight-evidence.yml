@@ -1,0 +1,10 @@
+validation:
+  status: passed
+  checks:
+    - name: TypeScript build
+      status: passed
+    - name: Unit tests
+      status: passed
+
+approval:
+  status: pending
