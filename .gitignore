@@ -3,3 +3,12 @@ dist/
 oclif.manifest.json
 *.tsbuildinfo
 .sf/
+
+# Generated Agentia Preflight reports
+/evidence.json
+/release-plan.md
+
+# Agentia-managed skills generated locally
+/.agents/skills/agentia-ai/
+/.agents/skills/agentia-cicd/
+/.agents/skills/agentia-testing/
