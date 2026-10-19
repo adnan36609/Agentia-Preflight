@@ -9,22 +9,44 @@ export interface GitEvidence {
   clean: boolean
 }
 
-export async function collectGitEvidence(base = 'main'): Promise<GitEvidence> {
-  const branch = (await execa('git', ['branch', '--show-current'])).stdout.trim()
+export async function collectGitEvidence(
+  base = 'main',
+): Promise<GitEvidence> {
+  const branch = (
+    await execa('git', ['branch', '--show-current'])
+  ).stdout.trim()
 
   const status = await execa('git', ['status', '--porcelain'])
-  const changedFiles = status.stdout
-    .split('\n')
-    .map(line => line.slice(3).trim())
-    .filter(Boolean)
 
-  const diff = await execa('git', ['diff', '--numstat', `${base}...HEAD`])
+  // Compare the working tree against the base branch, including
+  // committed, staged, and unstaged changes to tracked files.
+  const diff = await execa('git', ['diff', '--numstat', base])
+  const changedTrackedFiles = await execa(
+    'git',
+    ['diff', '--name-only', base],
+  )
+
+  // Include untracked files in the changed-file inventory.
+  const untracked = await execa(
+    'git',
+    ['ls-files', '--others', '--exclude-standard'],
+  )
+
+  const changedFiles = [
+    ...new Set(
+      [
+        ...changedTrackedFiles.stdout.split('\n'),
+        ...untracked.stdout.split('\n'),
+      ].filter(Boolean),
+    ),
+  ].sort()
 
   let additions = 0
   let deletions = 0
 
   for (const line of diff.stdout.split('\n').filter(Boolean)) {
     const [added, deleted] = line.split('\t')
+
     additions += Number(added) || 0
     deletions += Number(deleted) || 0
   }
@@ -35,6 +57,6 @@ export async function collectGitEvidence(base = 'main'): Promise<GitEvidence> {
     changedFiles,
     additions,
     deletions,
-    clean: changedFiles.length === 0,
+    clean: status.stdout.length === 0,
   }
 }
