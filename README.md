@@ -1,65 +1,69 @@
-# agentia-cli-agentia-preflight
+# Agentia Preflight
 
-Evidence-based release readiness checks for Agentia workflows
+**Evidence-based release readiness for Agentia workflows.**
 
-After install or link, it adds:
+Agentia Preflight is a terminal-first plugin for the Copado Agentia CLI. It evaluates Git changes, supplied workflow and validation evidence, human approval status, and project policies to produce an explainable release-readiness recommendation.
 
-```text
-agentia preflight analyze [NAME] [--from VALUE]
-```
+The result is one of three states:
 
-## Getting started
+- **BLOCK** — A blocking policy condition requires resolution.
+- **WARN** — Review or approval is required.
+- **READY** — No configured readiness risks were detected.
 
-If you created this plugin with `npm init @copado/agentia-plugin`, dependencies are already installed.
+Preflight also generates a prioritized test checklist, a human-readable release plan, and a structured JSON evidence receipt.
 
-```sh
-npm run build
-agentia plugins link .
-```
+> **Project status:** Hackathon prototype. The current version evaluates explicitly supplied YAML evidence. It does not independently verify that a live Copado workflow ran or automatically retrieve workflow results from a Copado organization.
 
-Confirm:
+## Why Preflight?
 
-```sh
-agentia plugins
-agentia preflight analyze
-agentia preflight analyze World --from me
-```
+AI-assisted development can accelerate software delivery, but release decisions still need evidence of successful validation, policy compliance, and human oversight.
 
-Re-run `npm run build` after TypeScript changes. Linked ESM plugins load compiled `dist/` output.
+Preflight makes those requirements visible in one terminal assessment. Developers can review the detected risks and recommended next steps before proceeding through the normal Agentia release workflow.
 
-## Install from npm
+Preflight complements Agentia. It does not replace Copado's system of record, authorize releases, or execute promotions and deployments.
 
-```sh
-agentia plugins install agentia-cli-agentia-preflight
-```
+## Features
 
-## What plugins can do today
+- **Git change assessment:** Inspects the current branch, working-tree state, changed-file inventory, and tracked-file diff statistics relative to a selected base branch.
+- **Policy as code:** Reads configurable readiness requirements from `.agentia-preflight.yml`.
+- **Workflow evidence assessment:** Evaluates supplied Agentia workflow status and individual workflow checks.
+- **Validation assessment:** Evaluates supplied build, test, and other validation results.
+- **Approval awareness:** Identifies when the configured policy requires human approval that has not yet been recorded.
+- **Explainable findings:** Assigns risk identifiers and provides explanations through a dedicated CLI command.
+- **Prioritized test checklist:** Organizes required follow-up work by priority.
+- **Release artifacts:** Produces `release-plan.md` and `evidence.json`.
+- **Agent Skill:** Includes a project-local skill that guides compatible coding agents through the assessment and its guardrails.
+- **Automated tests:** Uses Vitest to test policy decisions and checklist behavior.
 
-- Add new commands (`agentia <topic> <command>`)
-- Use oclif flags, args, and standard command lifecycle
-- Link or install like any other oclif plugin
-
-## Not supported yet
-
-- Calling Agentia CLI internals (auth, org/context, work items, git, and similar host services)
-- Extending or wrapping existing Agentia commands (`cicd work commit`, and so on)
-- Registering MCP tools through a plugin (`agentia mcp start` only loads tools shipped with the CLI)
-
-A first-party API for selected CLI integration points is planned. Do not
-depend on private Agentia source paths in the meantime.
-
-## Layout
+## How It Works
 
 ```text
-agentia-cli-agentia-preflight/
-  package.json
-  tsconfig.json
-  src/
-    index.ts
-    commands/
-      preflight/
-        analyze.ts
-  dist/
-```
-
-Generated with `npm init @copado/agentia-plugin`.
+Git repository
+      |
+      v
+Git change evidence
+      |
+      +----------------------------+
+      |                            |
+      v                            v
+Project policy              Supplied evidence
+.agentia-preflight.yml       .agentia-preflight-evidence.yml
+      |                            |
+      +-------------+--------------+
+                    |
+                    v
+          Policy evaluation
+                    |
+                    v
+          READY / WARN / BLOCK
+                    |
+          +---------+---------+
+          |         |         |
+          v         v         v
+       Findings  Test list  Explanations
+                    |
+                    v
+          +------------------+
+          | release-plan.md  |
+          | evidence.json    |
+          +------------------+
