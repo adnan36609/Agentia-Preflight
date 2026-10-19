@@ -22,10 +22,11 @@
     "yaml": "^2.9.1"
   },
   "devDependencies": {
-    "@types/node": "^18",
+    "@types/node": "^24.19.0",
     "oclif": "^4",
     "shx": "^0.3.3",
-    "typescript": "^5"
+    "typescript": "^5",
+    "vitest": "^5.0.3"
   },
   "engines": {
     "node": ">=18.0.0"
@@ -44,6 +45,7 @@
     "build": "shx rm -rf dist && tsc -b",
     "clean": "shx rm -f oclif.manifest.json",
     "prepack": "npm run build && oclif manifest",
-    "postpack": "npm run clean"
+    "postpack": "npm run clean",
+    "test": "vitest run"
   }
 }
