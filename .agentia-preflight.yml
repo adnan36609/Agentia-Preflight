@@ -1,5 +1,6 @@
 policies:
   requireCleanWorkingTree: true
+  requireWorkflowEvidence: true
   requireValidationEvidence: true
   requireHumanApproval: true
   maxChangedFiles: 50

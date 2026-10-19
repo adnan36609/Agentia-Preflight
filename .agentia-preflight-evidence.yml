@@ -1,3 +1,17 @@
+# DEMONSTRATION FIXTURE ONLY.
+# These statuses are examples, not independently verified results.
+# Replace them with actual workflow, validation, and approval evidence
+# before using Preflight to inform a real release decision.
+
+workflow:
+  status: passed
+  name: Agentia CI/CD validation (demo fixture)
+  checks:
+    - name: Workflow validation
+      status: passed
+    - name: Quality gate
+      status: passed
+
 validation:
   status: passed
   checks:
