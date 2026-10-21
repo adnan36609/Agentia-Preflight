@@ -1,9 +1,13 @@
 # DEMONSTRATION FIXTURE ONLY.
+#
 # These statuses are examples, not independently verified results.
-# Replace them with actual workflow, validation, and approval evidence
-# before using Preflight to inform a real release decision.
+# They are intentionally classified as fixtures by Preflight.
+#
+# A real release assessment requires independently retrieved workflow
+# evidence when requireVerifiedWorkflowEvidence is enabled.
 
 workflow:
+  provenance: fixture
   status: passed
   name: Agentia CI/CD validation (demo fixture)
   checks:
@@ -13,6 +17,7 @@ workflow:
       status: passed
 
 validation:
+  provenance: fixture
   status: passed
   checks:
     - name: TypeScript build

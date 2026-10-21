@@ -1,5 +1,8 @@
 import type { ValidationEvidence } from './policy.js'
-import type { WorkflowEvidence } from './workflow.js'
+import type {
+  EvidenceProvenance,
+  WorkflowEvidence,
+} from './workflow.js'
 
 export interface TestChecklistItem {
   priority: 'P0' | 'P1' | 'P2'
@@ -18,8 +21,12 @@ function collectEvidenceTasks(
   label: string,
   status: CheckStatus,
   checks: NamedCheck[],
+  provenance: EvidenceProvenance | undefined,
+  expectedProvenance: EvidenceProvenance,
 ): TestChecklistItem[] {
   const items: TestChecklistItem[] = []
+  const source = provenance ?? 'unavailable'
+  const verified = provenance === expectedProvenance
 
   if (status === 'unknown') {
     items.push({
@@ -47,7 +54,7 @@ function collectEvidenceTasks(
     items.push({
       priority: 'P1',
       completed: false,
-      task: `Review the reported ${label} result; no individual checks were supplied.`,
+      task: `Review the reported ${label} result; no individual checks were supplied (provenance: ${source}).`,
     })
   }
 
@@ -64,34 +71,20 @@ function collectEvidenceTasks(
         completed: false,
         task: `Run or provide evidence for ${label} check: ${check.name}.`,
       })
-    } else {
+    } else if (verified) {
       items.push({
         priority: 'P2',
         completed: true,
-        task: `${label} check passed: ${check.name}.`,
+        task: `${label} check verified as passed: ${check.name}.`,
+      })
+    } else {
+      items.push({
+        priority: 'P1',
+        completed: false,
+        task: `${label} check reported as passed but is unverified (provenance: ${source}): ${check.name}.`,
       })
     }
   }
-
-  return items
-}
-
-export function buildTestChecklist(
-  workflow: WorkflowEvidence,
-  validation: ValidationEvidence,
-): TestChecklistItem[] {
-  const items = [
-    ...collectEvidenceTasks(
-      'Agentia workflow',
-      workflow.status,
-      workflow.checks,
-    ),
-    ...collectEvidenceTasks(
-      'validation',
-      validation.status,
-      validation.checks,
-    ),
-  ]
 
   const priorityOrder = { P0: 0, P1: 1, P2: 2 }
 
@@ -101,17 +94,45 @@ export function buildTestChecklist(
 
   if (items.length === 0) {
     items.push({
-      priority: 'P2',
-      completed: true,
-      task: 'All reported workflow and validation checks passed.',
+      priority: 'P1',
+      completed: false,
+      task:
+        'Review the workflow and validation evidence before treating the assessment as complete.',
     })
   }
 
   return items
 }
 
+export function buildTestChecklist(
+  workflow: WorkflowEvidence,
+  validation: ValidationEvidence,
+): TestChecklistItem[] {
+  return [
+    ...collectEvidenceTasks(
+      'Agentia workflow',
+      workflow.status,
+      workflow.checks,
+      workflow.provenance,
+      'agentia-host-api',
+    ),
+    ...collectEvidenceTasks(
+      'validation',
+      validation.status,
+      validation.checks,
+      validation.provenance,
+      'local-execution',
+    ),
+  ].sort((a, b) => {
+    const priorityOrder = { P0: 0, P1: 1, P2: 2 }
+    return priorityOrder[a.priority] - priorityOrder[b.priority]
+  })
+}
+
 export function formatChecklistItem(item: TestChecklistItem): string {
   const checkbox = item.completed ? 'x' : ' '
 
-  return `- [${checkbox}] **${item.priority} — ${item.completed ? 'Verified' : 'Action required'}:** ${item.task}`
+  const state = item.completed ? 'Verified' : 'Action required'
+
+  return `- [${checkbox}] **${item.priority} - ${state}:** ${item.task}`
 }
