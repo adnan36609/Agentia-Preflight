@@ -7,6 +7,7 @@ oclif.manifest.json
 # Generated Agentia Preflight reports
 /evidence.json
 /release-plan.md
+/agentia-job-inspection.json
 
 # Agentia-managed skills generated locally
 /.agents/skills/agentia-ai/
