@@ -10,13 +10,12 @@ Preflight distinguishes between observed execution results, locally executed val
 
 ## Problem
 
-AI-assisted development accelerates code generation, but successful code generation does not establish that a change is ready for release.
+Release-readiness decisions can create false confidence when a reported success is treated as proof that the underlying check actually executed. A workflow status marked `passed` does not, by itself, establish where the evidence came from or whether the claimed validation was independently verified.
 
-Release decisions may depend on repository state, validation results, workflow execution, policy compliance, and human approval. When these conditions are scattered across tools or represented by supplied status declarations, developers can struggle to distinguish actual successful checks from missing, simulated, or unverified evidence.
+Agentia Preflight addresses this problem by evaluating evidence provenance alongside configurable release policies. It distinguishes demonstration fixtures from locally executed validation, identifies missing verification, and produces an explainable release-readiness recommendation.
 
-Agentia Preflight brings these checks into a single terminal workflow and explains why an assessment is blocked.
+The goal is to help developers and reviewers distinguish **what a system reports** from **what the available evidence actually establishes** before considering a release ready.
 
-Preflight complements Agentia. It does not authorize releases or execute promotions and deployments.
 
 ## Features
 
@@ -377,6 +376,20 @@ Local validation invokes the scripts configured in `package.json`. Review those 
 * **No authenticated human approval:** The current approval check evaluates a recorded status rather than an authenticated approver identity.
 * **Script trust:** Local validation executes the configured npm scripts and does not independently establish their quality.
 * **Prototype status:** The project is not intended to serve as the sole production release gate without further integration, security, and operational testing.
+
+## Demonstrated Impact
+
+Preflight demonstrates how evidence provenance can change a release-readiness decision.
+
+In the default assessment, the example workflow reports successful validation and quality-gate results, but the evidence is identified as `fixture`. Preflight blocks release readiness rather than treating those results as independently verified workflow execution.
+
+When invoked with `--run-validation`, Preflight executes the configured build and test commands. In the verified local run, both completed successfully, and their evidence was recorded as `local-execution`. The validation-evidence blocker was removed, while the workflow-evidence blocker remained.
+
+This distinction is deliberate: passing local tests does not prove that an Agentia CI/CD workflow actually ran.
+
+The current implementation passes 57 automated tests across six test files. These results demonstrate the prototype's tested behavior; production adoption, incident reduction, and operational savings have not been measured.
+
+Preflight complements Agentia; it does not authorize releases or execute promotions or deployments. It provides evidence-informed recommendations and does not claim to independently enforce or prevent a production release.
 
 ## Project Goal
 
