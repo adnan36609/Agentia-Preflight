@@ -1,4 +1,8 @@
 import { writeFile } from 'node:fs/promises'
+import {
+  formatCredentialStatus,
+  type AgentiaContextEvidence,
+} from './agentia-context.js'
 import type { GitEvidence } from './git.js'
 import type {
   ApprovalEvidence,
@@ -13,6 +17,7 @@ import type { WorkflowEvidence } from './workflow.js'
 export interface PreflightReceipt {
   generatedAt: string
   recommendation: 'READY' | 'WARN' | 'BLOCK'
+  agentiaContext: AgentiaContextEvidence
   git: GitEvidence
   workflow: WorkflowEvidence
   validation: ValidationEvidence
@@ -37,6 +42,34 @@ export async function writeReceipt(
     `**Recommendation:** ${receipt.recommendation}`,
     `**Generated:** ${receipt.generatedAt}`,
     '',
+    '## Agentia Context',
+    '',
+    `- Context status: ${receipt.agentiaContext.status}`,
+  ]
+
+  if (receipt.agentiaContext.status === 'available') {
+    const context = receipt.agentiaContext
+
+    lines.push(
+      `- Source: ${context.source}`,
+      `- CLI version: ${context.cliVersion}`,
+      `- Host API version: ${context.hostApiVersion}`,
+      `- CICD authentication: ${formatCredentialStatus(context.authentication.cicd)}`,
+      `- CRT authentication: ${formatCredentialStatus(context.authentication.crt)}`,
+      `- AI authentication: ${formatCredentialStatus(context.authentication.ai)}`,
+      `- Workspace branch: ${context.workspace.branch ?? 'not reported'}`,
+      `- Workspace base: ${context.workspace.baseBranch ?? 'not reported'}`,
+      `- Active work item: ${context.workspace.workItemName ?? 'none reported'}`,
+      `- Work item title: ${context.workspace.workItemTitle ?? 'not reported'}`,
+      `- Project: ${context.workspace.project ?? 'not reported'}`,
+      `- Environment: ${context.workspace.environment ?? 'not reported'}`,
+    )
+  } else {
+    lines.push(`- Reason: ${receipt.agentiaContext.error}`)
+  }
+
+  lines.push(
+    '',
     '## Change Evidence',
     '',
     `- Branch: ${receipt.git.branch}`,
@@ -50,6 +83,7 @@ export async function writeReceipt(
     '',
     `- Workflow: ${receipt.workflow.name}`,
     `- Status: ${receipt.workflow.status}`,
+    `- Evidence provenance: ${receipt.workflow.provenance ?? 'unavailable'}`,
     ...receipt.workflow.checks.map(
       check => `- ${check.name}: ${check.status}`,
     ),
@@ -57,6 +91,7 @@ export async function writeReceipt(
     '## Validation',
     '',
     `- Status: ${receipt.validation.status}`,
+    `- Evidence provenance: ${receipt.validation.provenance ?? 'unavailable'}`,
     ...receipt.validation.checks.map(
       check => `- ${check.name}: ${check.status}`,
     ),
@@ -71,7 +106,7 @@ export async function writeReceipt(
     '',
     '## Findings',
     '',
-  ]
+  )
 
   if (receipt.risks.length === 0) {
     lines.push('No policy risks detected.')
@@ -93,5 +128,9 @@ export async function writeReceipt(
         : 'Proceed to human approval using the normal Agentia workflow.',
   )
 
-  await writeFile('release-plan.md', lines.join('\n') + '\n', 'utf8')
+  await writeFile(
+    'release-plan.md',
+    lines.join('\n') + '\n',
+    'utf8',
+  )
 }
