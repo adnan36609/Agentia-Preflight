@@ -17,6 +17,7 @@
     "/oclif.manifest.json"
   ],
   "dependencies": {
+    "@copado/agentia-plugin-sdk": "^0.1.2",
     "@oclif/core": "^4",
     "execa": "^10.0.1",
     "yaml": "^2.9.1"
@@ -30,6 +31,42 @@
   },
   "engines": {
     "node": ">=18.0.0"
+  },
+  "agentia": {
+    "hostApi": 1,
+    "requires": [
+      "auth.status",
+      "workspace.current"
+    ],
+    "permissions": {
+      "network": [],
+      "files": "repository",
+      "commands": [
+        "git",
+        "npm"
+      ],
+      "env": [
+        "COMSPEC",
+        "GIT_CONFIG_GLOBAL",
+        "GIT_CONFIG_NOSYSTEM",
+        "GIT_CONFIG_SYSTEM",
+        "GIT_EXEC_PATH",
+        "HOME",
+        "HOMEDRIVE",
+        "HOMEPATH",
+        "LANG",
+        "LC_*",
+        "PATH",
+        "SYSTEMROOT",
+        "TEMP",
+        "TMP",
+        "TMPDIR",
+        "USERPROFILE",
+        "WINDIR",
+        "XDG_*"
+      ]
+    },
+    "hooks": []
   },
   "oclif": {
     "bin": "agentia",
