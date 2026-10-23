@@ -36,7 +36,11 @@
     "hostApi": 1,
     "requires": [
       "auth.status",
-      "workspace.current"
+      "workspace.current",
+      "job.list",
+      "job.get",
+      "pipeline.list",
+      "promotion.list"
     ],
     "permissions": {
       "network": [],
